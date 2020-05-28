@@ -236,7 +236,7 @@ class NAU7802():
 
         # shift the number back right to recover its intended magnitude
         value = valueShifted >> 8
-        
+
         return value
 
     # Get contents of a register
