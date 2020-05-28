@@ -207,8 +207,9 @@ class NAU7802():
     # Return a given bit within a register
     def getBit(self, bitNumber, registerAddress):    # Return a given bit within a register
         value = self.getRegister(registerAddress)
-        value &= (1 << bitNumber)    # Clear all but this bit
-        return value
+        # value &= (1 << bitNumber)    # Clear all but this bit
+        value = value >> bitNumber & 1
+        return bool(value)
 
     def getCalibrationFactor(self):    # Ask library for this value. Useful for storing value into NVM.
         return self.calibrationFactor
