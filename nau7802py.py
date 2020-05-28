@@ -216,25 +216,27 @@ class NAU7802():
     # Returns 24-bit reading
     # Assumes CR Cycle Ready bit (ADC conversion complete) has been checked to be 1
     def getReading(self):    # Returns 24-bit reading. Assumes CR Cycle Ready bit (ADC conversion complete) has been checked by .available()
-        try:
-            block = self.bus.read_i2c_block_data(self.deviceAddress, Scale_Registers['NAU7802_ADCO_B2'], 3)
-            valueRaw = block[0] << 16    # MSB
-            valueRaw |= block[1] << 8    #MidSB
-            valueRaw |= block[2]    # LSB
+        
+        while not self.available():
+            pass
+        
+        block = self.bus.read_i2c_block_data(self.deviceAddress, Scale_Registers['NAU7802_ADCO_B2'], 3)
+        
+        valueRaw = block[0] << 16    # MSB
+        valueRaw |= block[1] << 8    #MidSB
+        valueRaw |= block[2]    # LSB
 
-            # the raw value coming from the ADC is a 24-bit number, so the sign bit now
-            # resides on bit 23 (0 is LSB) of the container. By shifting the
-            # value to the left, I move the sign bit to the MSB of the container.
-            # By casting to a signed container I now have properly recovered
-            # the sign of the original value
-            valueShifted = valueRaw << 8
+        # the raw value coming from the ADC is a 24-bit number, so the sign bit now
+        # resides on bit 23 (0 is LSB) of the container. By shifting the
+        # value to the left, I move the sign bit to the MSB of the container.
+        # By casting to a signed container I now have properly recovered
+        # the sign of the original value
+        valueShifted = valueRaw << 8
 
-            # shift the number back right to recover its intended magnitude
-            value = valueShifted >> 8
-
-            return value
-        except:
-            return False
+        # shift the number back right to recover its intended magnitude
+        value = valueShifted >> 8
+        
+        return value
 
     # Get contents of a register
     def getRegister(self, registerAddress):    # Get contents of a register
