@@ -326,7 +326,7 @@ class NAU7802():
             return self.setBit(CTRL2_Bits['NAU7802_CTRL2_CHS'], Scale_Registers['NAU7802_CTRL2'])    # Channel 2
 
     # Set the gain
-    # x1, 2, 4, 8, 16, 32, 64, 128 are avaialable
+    # x1, 2, 4, 8, 16, 32, 64, 128 are available
     def setGain(self, gainValue):    # Set the gain. x1, 2, 4, 8, 16, 32, 64, 128 are available
         if gainValue > 0b111:
             gainValue = 0b111    # Error check
@@ -347,7 +347,7 @@ class NAU7802():
 
     # Set the onboard Low-Drop-Out voltage regulator to a given value
     # 2.4, 2.7, 3.0, 3.3, 3.6, 3.9, 4.2, 4.5V are available
-    def setLDO(self, ldoValue):    # Set the onboard Low-Drop-Out voltage regulator to a given value. 2.4, 2.7, 3.0, 3.3, 3.6, 3.9, 4.2, 4.5V are avaialable
+    def setLDO(self, ldoValue):    # Set the onboard Low-Drop-Out voltage regulator to a given value. 2.4, 2.7, 3.0, 3.3, 3.6, 3.9, 4.2, 4.5V are available
         if ldoValue > 0b111:
             ldoValue = 0b111    # Error check
 
