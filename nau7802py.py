@@ -258,7 +258,7 @@ class NAU7802():
         # Prevent the current reading from being less than zero offset
         # This happens when the scale is zero'd, unloaded, and the load cell reports a value slightly less than zero value
         # causing the weight to be negative or jump to millions of pounds
-        if allowNegativeWeights == False:
+        if not allowNegativeWeights:
             if onScale < self.zeroOffset:
                 onScale = self.zeroOffset    # Force reading to zero
 
