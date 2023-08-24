@@ -1,4 +1,4 @@
-import smbus
+from usmbus import SMBus 
 import time
 
 # Register Map
@@ -107,7 +107,7 @@ class NAU7802():
     # Default constructor
     def __init__(self, i2cPort = 1, deviceAddress = 0x2A, zeroOffset = False,
                  calibrationFactor = False):
-        self.bus = smbus.SMBus(i2cPort)    # This stores the user's requested i2c port
+        self.bus = SMBus(i2cPort)    # This stores the user's requested i2c port
         self.deviceAddress = deviceAddress    # Default unshifted 7-bit address of the NAU7802
 
         # y = mx + b
