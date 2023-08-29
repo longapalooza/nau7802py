@@ -5,15 +5,18 @@ import nau7802py, time
 myScale = nau7802py.NAU7802()
 
 # print('Got to line 7')
+result = myScale.begin()
+print("result outside method:")
+print(result)
 
-if myScale.begin(): #ok so the code fails on this
+if result: #ok so the code fails on this
     while True:
         currentReading = myScale.getReading()
         print('Reading: ' + str(currentReading))
         time.sleep(2)
 
 else:
-    print('myScale.begin() failed')
+    print('myScale.begin() failed') # debugging
 # import json, nau7802py, pathlib, time
 
 # myScale = nau7802py.NAU7802() # Create instance of the NAU7802 class
