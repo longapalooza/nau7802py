@@ -41,8 +41,8 @@ PU_CTRL_Bits = {'NAU7802_PU_CTRL_RR': 0,
                 'NAU7802_PU_CTRL_AVDDS': 7}
 
 # Bits within the CTRL1 register
-CTRL1_Bits = {'NAU7802_CTRL1_GAIN': 0, #changed from 2
-              'NAU7802_CTRL1_VLDO': 3, #changed from 5
+CTRL1_Bits = {'NAU7802_CTRL1_GAIN': 0, #in the master branch, i think this is 2 for some reason?
+              'NAU7802_CTRL1_VLDO': 3, #and this is 5? 
               'NAU7802_CTRL1_DRDY_SEL': 6,
               'NAU7802_CTRL1_CRP': 7}
 
@@ -74,7 +74,7 @@ NAU7802_LDO_Values = {'NAU7802_LDO_2V4': 0b111,
                       'NAU7802_LDO_3V3': 0b100,
                       'NAU7802_LDO_3V6': 0b011,
                       'NAU7802_LDO_3V9': 0b010,
-                      'NAU7802_LDO_4V2': 0b001, #
+                      'NAU7802_LDO_4V2': 0b001,
                       'NAU7802_LDO_4V5': 0b000}
 
 # Allowed gains
