@@ -1,4 +1,4 @@
-from usmbus import SMBus 
+from machine import I2C, Pin
 import time
 
 # Register Map
@@ -23,9 +23,9 @@ Scale_Registers = {'NAU7802_PU_CTRL': 0x00,
                    'NAU7802_ADCO_B2': 18,
                    'NAU7802_ADCO_B1': 19,
                    'NAU7802_ADCO_B0': 20,
-                   'NAU7802_ADC': 0x15,           # Shared ADC and OTP 32:24
-                   'NAU7802_OTP_B1': 22,          # OTP 23:16 or 7:0?
-                   'NAU7802_OTP_B0': 23,          # OTP 15:8
+                   'NAU7802_ADC': 21,           # Shared ADC and OTP 32:24
+                   'NAU7802_OTP_B1': 21,          # OTP 23:16 or 7:0?
+                   'NAU7802_OTP_B0': 22,          # OTP 15:8
                    'NAU7802_PGA': 0x1B,
                    'NAU7802_PGA_PWR': 0x1C,
                    'NAU7802_DEVICE_REV': 0x1F}
@@ -41,16 +41,16 @@ PU_CTRL_Bits = {'NAU7802_PU_CTRL_RR': 0,
                 'NAU7802_PU_CTRL_AVDDS': 7}
 
 # Bits within the CTRL1 register
-CTRL1_Bits = {'NAU7802_CTRL1_GAIN': 2,
-              'NAU7802_CTRL1_VLDO': 5,
+CTRL1_Bits = {'NAU7802_CTRL1_GAIN': 0, #changed from 2
+              'NAU7802_CTRL1_VLDO': 3, #changed from 5
               'NAU7802_CTRL1_DRDY_SEL': 6,
               'NAU7802_CTRL1_CRP': 7}
 
 # Bits within the CTRL2 register
-CTRL2_Bits = {'NAU7802_CTRL2_CALMOD': 0,
+CTRL2_Bits = {'NAU7802_CTRL2_CALMOD': 0, #see? here it's the right-most bit.
               'NAU7802_CTRL2_CALS': 2,
               'NAU7802_CTRL2_CAL_ERROR': 3,
-              'NAU7802_CTRL2_CRS': 4,
+              'NAU7802_CTRL2_CRS': 4,  #see? here it's the right-most bit.
               'NAU7802_CTRL2_CHS': 7}
 
 # Bits within the PGA register
@@ -74,7 +74,7 @@ NAU7802_LDO_Values = {'NAU7802_LDO_2V4': 0b111,
                       'NAU7802_LDO_3V3': 0b100,
                       'NAU7802_LDO_3V6': 0b011,
                       'NAU7802_LDO_3V9': 0b010,
-                      'NAU7802_LDO_4V2': 0b001,
+                      'NAU7802_LDO_4V2': 0b001, #
                       'NAU7802_LDO_4V5': 0b000}
 
 # Allowed gains
@@ -107,9 +107,8 @@ class NAU7802():
     # Default constructor
     def __init__(self, i2cPort = 1, deviceAddress = 0x2A, zeroOffset = False,
                  calibrationFactor = False):
-        self.bus = SMBus(i2cPort)    # This stores the user's requested i2c port
+        self.bus = I2C(0, scl=Pin(22), sda=Pin(21), freq=100000) #change the pins here for your own MCU
         self.deviceAddress = deviceAddress    # Default unshifted 7-bit address of the NAU7802
-
         # y = mx + b
         self.zeroOffset = zeroOffset;    # This is b
         self.calibrationFactor = calibrationFactor    # This is m. User provides this number so that we can output y when requested
@@ -145,10 +144,8 @@ class NAU7802():
     # If initialize is false, then it's up to the caller to initalize and calibrate
     # Returns true upon completion
     def begin(self, initialized = True):    # Check communication and initialize sensor
-
         # Check if the device ack's over I2C
         if self.isConnected() == False:
-
             # There are rare times when the sensor is occupied and doesn't ack. A 2nd try resolves this.
             if self.isConnected() == False:
                 return False
@@ -163,7 +160,6 @@ class NAU7802():
             result &= self.setRegister(Scale_Registers['NAU7802_ADC'], 0x30)     # Turn off CLK_CHP. From 9.1 power on sequencing.
             result &= self.setBit(PGA_PWR_Bits['NAU7802_PGA_PWR_PGA_CAP_EN'], Scale_Registers['NAU7802_PGA_PWR'])     # Enable 330pF decoupling cap on chan 2. From 9.14 application circuit note.
             result &= self.calibrateAFE()     # Re-cal analog front end when we change gain, sample rate, or channel
-
         return result
 
     # Begin asynchronous calibration of the analog front end.
@@ -221,7 +217,9 @@ class NAU7802():
         while not self.available():
             pass
         
-        block = self.bus.read_i2c_block_data(self.deviceAddress, Scale_Registers['NAU7802_ADCO_B2'], 3)
+        # block = self.bus.read_i2c_block_data(self.deviceAddress, Scale_Registers['NAU7802_ADCO_B2'], 3)
+        block = self.bus.readfrom_mem(self.deviceAddress, Scale_Registers['NAU7802_ADCO_B2'], 3)
+        
         
         valueRaw = block[0] << 16    # MSB
         valueRaw |= block[1] << 8    #MidSB
@@ -242,8 +240,9 @@ class NAU7802():
     # Get contents of a register
     def getRegister(self, registerAddress):    # Get contents of a register
         try:
-            return self.bus.read_i2c_block_data(self.deviceAddress, registerAddress, 1)[0]
+            return self.bus.readfrom_mem(self.deviceAddress, registerAddress, 1)[0]
         except:
+            # print("getRegister doesn't work!") #seems getRegister works
             return False    # Error
 
     # Get the revision code of this IC
@@ -276,7 +275,7 @@ class NAU7802():
     # Tests for device ack to I2C address
     def isConnected(self):    # Returns true if device acks at the I2C address
         try:
-            self.bus.read_byte(self.deviceAddress)
+            self.bus.readfrom(self.deviceAddress,1)
             return True
         except:
             return False
@@ -302,8 +301,8 @@ class NAU7802():
             counter += 1
         return True
 
-    # Resets all registers to Power Of Defaults
-    def reset(self):    # Resets all registers to Power Of Defaults
+    # Resets all registers to Power Off Defaults
+    def reset(self):    # Resets all registers to Power Off Defaults
         self.setBit(PU_CTRL_Bits['NAU7802_PU_CTRL_RR'], Scale_Registers['NAU7802_PU_CTRL']) # Set RR
         time.sleep(0.001)
         return self.clearBit(PU_CTRL_Bits['NAU7802_PU_CTRL_RR'], Scale_Registers['NAU7802_PU_CTRL']) # Clear RR to leave reset state
@@ -360,12 +359,21 @@ class NAU7802():
 
         return self.setBit(PU_CTRL_Bits['NAU7802_PU_CTRL_AVDDS'], Scale_Registers['NAU7802_PU_CTRL'])    # Enable the internal LDO
 
+    # def write_word_data(i2c, deviceAddress, register, data):
+    #     # Convert 16-bit data to a bytearray (low byte first)
+    #     data_bytes = bytearray([data & 0xFF, (data >> 8) & 0xFF])
+    #     # Write the word to the specified register
+    #     i2c.writeto_mem(deviceAddress, register, data_bytes)
+
     # Send a given value to be written to given address
     # Return true if successful
     def setRegister(self, registerAddress, value):    # Send a given value to be written to given address. Return true if successful
         try:
-            self.bus.write_word_data(self.deviceAddress, registerAddress, value)
-        except:
+            # data_bytes = bytearray([value & 0xFF, (value >> 8) & 0xFF])
+            self.bus.writeto_mem(self.deviceAddress, registerAddress, bytes([value]))
+            # self.bus.write_word_data(, self.deviceAddress, registerAddress, value)
+        except Exception as e:
+            print("setRegister won't work! ", e)
             return False    # Sensor did not ACK
         return True
 
